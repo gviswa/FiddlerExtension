@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RequestHelper", "RequestHelper\RequestHelper.csproj", "{622F6435-B311-47C7-91C0-6DEA37C000DB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Global", "Global", "{2746BE99-2074-4DA2-9621-8B64CBD511AD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencies", "{C422B87E-4ECD-4199-9D4A-3F94A4B95A15}"
+	ProjectSection(SolutionItems) = preProject
+		Dependencies\Fiddler.exe = Dependencies\Fiddler.exe
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{622F6435-B311-47C7-91C0-6DEA37C000DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{622F6435-B311-47C7-91C0-6DEA37C000DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{622F6435-B311-47C7-91C0-6DEA37C000DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{622F6435-B311-47C7-91C0-6DEA37C000DB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C422B87E-4ECD-4199-9D4A-3F94A4B95A15} = {2746BE99-2074-4DA2-9621-8B64CBD511AD}
+	EndGlobalSection
+EndGlobal
