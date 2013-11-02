@@ -7,53 +7,107 @@ namespace Fiddler.Extensions
 {
     public class RequestHelper : IAutoTamper
     {
+        #region Private variables
         #region UI
-        private MenuItem miBlockThisRequest;
-        private MenuItem mnuRequestHelper;
-        private MenuItem miChangeDomainTo;
+        private MenuItem _miBlockThisRequest;
+        private MenuItem _mnuRequestHelper;
+        private MenuItem _miChangeDomainTo;
+        private MenuItem _miRequestHelperEnabled;
         #endregion
 
+        private bool _isRequestHelperEnabled = false;
         private List<string> UrlsToBlock = new List<string>();
-        private Dictionary<string, string> UrlDomainMapping = new Dictionary<string, string>();
+        private Dictionary<string, string> UrlDomainMapping = new Dictionary<string, string>(); 
+        #endregion
 
+        #region Constructor and UI initializers
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public RequestHelper()
         {
             InitializeMenu();
         }
 
+        /// <summary>
+        /// Initialize the Main menu and context menu items
+        /// </summary>
         private void InitializeMenu()
         {
             //Initialize menu instances
-            miBlockThisRequest = new MenuItem();
-            mnuRequestHelper = new MenuItem();
-            miChangeDomainTo = new MenuItem();
+            _miBlockThisRequest = new MenuItem();
+            _mnuRequestHelper = new MenuItem();
+            _miChangeDomainTo = new MenuItem();
+            _miRequestHelperEnabled = new MenuItem();
 
             //Main Menu
-            mnuRequestHelper.Text = "&Request Helper";
+            _mnuRequestHelper.MenuItems.AddRange(new MenuItem[] {
+                                                                  _miRequestHelperEnabled
+                                                        });
+
+            _mnuRequestHelper.Text = "&Request Helper";
+
+            //Main menu Item 1 Initialize
+            _miRequestHelperEnabled.Index = 0;
+            _miRequestHelperEnabled.Text = "&Enabled";
+            _miRequestHelperEnabled.Click += new EventHandler(EnableButton_Click);
+
+
+
             //Context Menu
 
             //Block this request context menu
-            miBlockThisRequest.Text = "&Block this URL";
-            miBlockThisRequest.Click += new System.EventHandler(miBlockThisRequest_Click);
+            _miBlockThisRequest.Text = "&Block this URL";
+            _miBlockThisRequest.Click += new System.EventHandler(BlockThisRequestContextItem_Click);
 
             //Change the domain context menu
-            miChangeDomainTo.Text = "&Change domain to";
-            miChangeDomainTo.Click += new System.EventHandler(miChangeDomainTo_Click);
+            _miChangeDomainTo.Text = "&Change domain to";
+            _miChangeDomainTo.Click += new System.EventHandler(ChangeDomainToContextItem_Click);
+        } 
+        #endregion
+
+        #region Event Handlers
+        /// <summary>
+        /// Enable/Disable this extension
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void EnableButton_Click(object sender, System.EventArgs e)
+        {
+            MenuItem oSender = (sender as MenuItem);
+            oSender.Checked = !oSender.Checked;
+
+            _isRequestHelperEnabled = _miRequestHelperEnabled.Checked;
+            if (_isRequestHelperEnabled)
+            {
+                _mnuRequestHelper.Text = "&Request Helper-ON";
+            }
+            else
+            {
+                _mnuRequestHelper.Text = "&Request Helper";
+            }
+
+            //TODO : Based on enable/disable show/hide other menu items in the main menu
+            // Enable menuitems based on overall enabled state.
+            //miEditBlockedHosts.Enabled = miFlashAlwaysBlock.Enabled = miShortCircuitRedirects.Enabled = miLikelyPaths.Enabled = miHideBlockedSessions.Enabled =
+            //miBlockXDomainFlash.Enabled = miSplit2.Enabled = bBlockerEnabled;
         }
+
+
 
         /// <summary>
         /// Event handler for Change domain to context menu
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void miChangeDomainTo_Click(object sender, System.EventArgs e)
+        private void ChangeDomainToContextItem_Click(object sender, System.EventArgs e)
         {
             Session[] oSessions = FiddlerApplication.UI.GetSelectedSessions();
             foreach (Session oSession in oSessions)
             {
                 try
                 {
-                    string domain = frmPrompt.GetUserString("Domain to Switch", "Enter the domain to switch for the request : " + oSession.url , "");
+                    string domain = frmPrompt.GetUserString("Domain to Switch", "Enter the domain to switch for the request : " + oSession.url, "");
                     MapUrltoDomain(oSession, domain);
                 }
                 catch (Exception eX)
@@ -63,21 +117,13 @@ namespace Fiddler.Extensions
             }
         }
 
-        private void MapUrltoDomain(Session oSession, string domain)
-        {
-            if (!UrlDomainMapping.ContainsKey(oSession.url.ToLower()))
-            {
-                UrlDomainMapping[oSession.url.ToLower()] = domain.ToLower();
-            }
-        }
-
 
         /// <summary>
         /// Event handler for Block this URL context menu
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void miBlockThisRequest_Click(object sender, System.EventArgs e)
+        private void BlockThisRequestContextItem_Click(object sender, System.EventArgs e)
         {
             Session[] oSessions = FiddlerApplication.UI.GetSelectedSessions();
             foreach (Session oSession in oSessions)
@@ -91,19 +137,38 @@ namespace Fiddler.Extensions
                     MessageBox.Show(eX.Message, "Cannot block host");
                 }
             }
+        } 
+        #endregion
+
+        #region Configuration Methods
+        /// <summary>
+        /// Adds the session url and the redirect domain to the UrlDomainMapping dictionary
+        /// </summary>
+        /// <param name="oSession">Fiddler Session</param>
+        /// <param name="domain">Domain to remap</param>
+        private void MapUrltoDomain(Session oSession, string domain)
+        {
+            if (!UrlDomainMapping.ContainsKey(oSession.url.ToLower()))
+            {
+                UrlDomainMapping[oSession.url.ToLower()] = domain.ToLower();
+            }
         }
 
 
+        /// <summary>
+        /// Adds the current session url to the Blocked urls list
+        /// </summary>
+        /// <param name="oSession"></param>
         private void AddToBlockList(Session oSession)
         {
             if (!UrlsToBlock.Contains(oSession.url.ToLower()))
             {
                 UrlsToBlock.Add(oSession.url.ToLower());
             }
-            StrikeOrHideSession(oSession);
-        }
+        } 
+        #endregion
 
-
+        #region Functional Methods
         private void BlockThisSession(Session oSession)
         {
             oSession.oRequest.FailSession(404, "Fiddler - Content Blocked", "Blocked this request");
@@ -116,8 +181,14 @@ namespace Fiddler.Extensions
             oSession["ui-strikeout"] = "userblocked";
             oSession["ui-color"] = "gray";
         }
-        
 
+        private void RedirectSession(Session oSession)
+        {
+            oSession.host = UrlDomainMapping[oSession.url.ToLower()];
+        } 
+        #endregion
+
+        #region IAutoTamper Methods
         public void OnBeforeUnload()
         {
         }
@@ -125,9 +196,9 @@ namespace Fiddler.Extensions
         public void OnLoad()
         {
             //Load the Main menu and context menu here
-            FiddlerApplication.UI.mnuMain.MenuItems.Add(mnuRequestHelper);
-            FiddlerApplication.UI.mnuSessionContext.MenuItems.Add(0, miBlockThisRequest);
-            FiddlerApplication.UI.mnuSessionContext.MenuItems.Add(1, miChangeDomainTo);
+            FiddlerApplication.UI.mnuMain.MenuItems.Add(_mnuRequestHelper);
+            FiddlerApplication.UI.mnuSessionContext.MenuItems.Add(0, _miBlockThisRequest);
+            FiddlerApplication.UI.mnuSessionContext.MenuItems.Add(1, _miChangeDomainTo);
         }
 
         public void AutoTamperRequestAfter(Session oSession)
@@ -136,7 +207,9 @@ namespace Fiddler.Extensions
 
         public void AutoTamperRequestBefore(Session oSession)
         {
-            if (UrlsToBlock.Contains(oSession.url))
+            if (!_isRequestHelperEnabled) return;
+
+            if (UrlsToBlock.Contains(oSession.url.ToLower()))
             {
                 BlockThisSession(oSession);
             }
@@ -146,10 +219,6 @@ namespace Fiddler.Extensions
             }
         }
 
-        private void RedirectSession(Session oSession)
-        {
-            oSession.host = UrlDomainMapping[oSession.url.ToLower()];
-        }
 
         public void AutoTamperResponseAfter(Session oSession)
         {
@@ -161,6 +230,7 @@ namespace Fiddler.Extensions
 
         public void OnBeforeReturningError(Session oSession)
         {
-        }
+        } 
+        #endregion
     }
 }
